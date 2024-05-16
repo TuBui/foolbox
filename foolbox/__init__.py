@@ -20,7 +20,7 @@ from . import distances  # noqa: F401
 from .criteria import Criterion  # noqa: F401
 from .criteria import Misclassification  # noqa: F401
 from .criteria import TargetedMisclassification  # noqa: F401
-
+from .criteria import TrustmarkMisprediction  # noqa: F401
 from . import plot  # noqa: F401
 
 from .models import Model  # noqa: F401

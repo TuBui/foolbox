@@ -11,7 +11,7 @@ from .gradient_descent_base import (
     normalize_lp_norms,
     uniform_l2_n_balls,
 )
-from .. import Model, Misclassification, TargetedMisclassification
+from .. import Model, Misclassification, TargetedMisclassification, TrustmarkMisprediction
 from ..devutils import atleast_kd, flatten
 from ..distances import l1, linf, l2, l0, LpDistance
 
@@ -61,6 +61,7 @@ def project_onto_l1_ball(x: ep.Tensor, eps: ep.Tensor) -> ep.Tensor:
     x = mask * x + (1 - mask) * proj * ep.sign(x)
     return x.reshape(original_shape)
 
+from torch import nn
 
 class FMNAttackLp(MinimizationAttack, ABC):
     """The Fast Minimum Norm adversarial attack, in Lp norm. [Pintor21]_
@@ -104,6 +105,7 @@ class FMNAttackLp(MinimizationAttack, ABC):
 
         self.p = ps[self.distance]
         self.dual = duals[self.distance]
+        self.trustmark_bce = nn.BCEWithLogitsLoss(reduction="none")
 
     def run(
         self,
@@ -117,13 +119,17 @@ class FMNAttackLp(MinimizationAttack, ABC):
     ) -> T:
         raise_if_kwargs(kwargs)
         criterion_ = get_criterion(criterion)
-
+        is_trustmark = False  # is the target model trustmark model
         if isinstance(criterion_, Misclassification):
             targeted = False
             classes = criterion_.labels
         elif isinstance(criterion_, TargetedMisclassification):
             targeted = True
             classes = criterion_.target_classes
+        elif isinstance(criterion_, TrustmarkMisprediction):
+            is_trustmark = True
+            targeted = False
+            classes = criterion_.secrets
         else:
             raise ValueError("unsupported criterion")
 
@@ -132,7 +138,10 @@ class FMNAttackLp(MinimizationAttack, ABC):
         ) -> Tuple[ep.Tensor, Tuple[ep.Tensor, ep.Tensor]]:
 
             logits = model(inputs)
-
+            if is_trustmark:
+                loss = -ep.astensor(self.trustmark_bce(logits.raw, labels.raw).mean(axis=-1))
+                return -loss.sum(), (logits, loss)
+            
             if targeted:
                 c_minimize = best_other_classes(logits, labels)
                 c_maximize = labels  # target_classes
@@ -176,11 +185,11 @@ class FMNAttackLp(MinimizationAttack, ABC):
             # start from x0
             delta = ep.zeros_like(x)
 
-        if classes.shape != (N,):
-            name = "target_classes" if targeted else "labels"
-            raise ValueError(
-                f"expected {name} to have shape ({N},), got {classes.shape}"
-            )
+        # if classes.shape != (N,):
+        #     name = "target_classes" if targeted else "labels"
+        #     raise ValueError(
+        #         f"expected {name} to have shape ({N},), got {classes.shape}"
+        #     )
 
         min_, max_ = model.bounds
         rows = range(N)
@@ -202,8 +211,10 @@ class FMNAttackLp(MinimizationAttack, ABC):
         best_lp = worst_norm
         best_delta = delta
         adv_found = ep.zeros(x, len(x)).bool()
-
+        early_stopping = False
         for i in range(self.steps):
+            if early_stopping:
+                break
             # perform cosine annealing of learning rates
             stepsize = (
                 self.min_stepsize
@@ -220,6 +231,8 @@ class FMNAttackLp(MinimizationAttack, ABC):
 
             loss, (logits, loss_batch), gradients = grad_and_logits(x_adv, classes)
             is_adversarial = criterion_(x_adv, logits)
+            if is_adversarial.float32().mean()==1:
+                early_stopping = True
             lp = ep.norms.lp(flatten(delta), p=self.p, axis=-1)
             is_smaller = lp <= best_lp
             is_both = ep.logical_and(is_adversarial, is_smaller)

@@ -141,3 +141,19 @@ class TargetedMisclassification(Criterion):
         assert classes.shape == self.target_classes.shape
         is_adv = classes == self.target_classes
         return restore_type(is_adv)
+
+class TrustmarkMisprediction(Criterion):
+    def __init__(self, secrets):
+        super().__init__()
+        self.secrets : ep.Tensor = ep.astensor(secrets).float32()  # B,L
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.secrets.shape})"
+    
+    def __call__(self, perturbed: T, outputs: T) -> T:
+        outputs_, restore_type = ep.astensor_(outputs)
+        del perturbed, outputs
+        pred = (outputs_ > 0).float32()
+        acc = (pred == self.secrets).float32().mean(axis=-1) # B,
+        is_adv = acc < 0.55
+        return restore_type(is_adv)
