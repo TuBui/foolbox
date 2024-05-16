@@ -1,0 +1,68 @@
+requests == 2.31  # 2.31
+setuptools == 59.5.0
+h5py==3.11.0
+h5py-cache==1.0
+pandas==2.2.2
+Pillow==10.2.0
+wget==3.2
+tensorboard == 2.8.0
+tensorboardx == 2.5
+scikit-learn == 1.0.2
+scikit-image == 0.19.2
+slackclient == 2.9.3
+reportlab == 3.6.0
+scipy == 1.8.0
+ImageHash == 4.2.1
+wandb == 0.12.15
+faiss-gpu == 1.7.2
+augly == 0.1.6
+ffmpeg-python == 0.2.0
+ipython==8.18.1
+dlib == 19.23.1
+streamlit == 1.31.0  # 1.28.2  # 1.20.0
+easydict == 1.10
+albumentations==0.4.3
+beautifulsoup4==4.12.3
+# opencv-python-headless==4.1.2.30
+opencv-python==4.6.0.*
+pudb==2019.2
+imageio==2.9.0
+imageio-ffmpeg==0.4.2
+omegaconf==2.3.0
+einops==0.3.0
+bchlib == 0.14.0
+ninja==1.11.1
+gradio==3.20.0
+notebook==6.5.5
+jupyterlab==4.0.6
+seaborn==0.13.0
+hydra_core==1.3.2
+ray==2.7.1
+imbalanced-learn==0.12.0
+openslide-python==1.3.1
+optuna==3.3.0
+captum == 0.6.0
+pydantic<2.2.0,>=1.7.4
+lightning==2.2.4
+lpips == 0.1.4
+torchsummary == 1.5.1
+torch-fidelity==0.3.0
+torchgeometry==0.1.2
+torch-geometric==2.4.0
+torchmetrics==0.11.4
+pytorch-fid == 0.3.0
+test-tube==0.7.5
+tiatoolbox==0.1.1
+transformers==4.36.2
+typing_extensions==4.9.0
+lifelines==0.28.0
+joblib==1.4.2
+tqdm==4.66.4
+matplotlib==3.7.4
+pymysql
+# mysqlclient
+comet_ml==3.41.0
+kornia==0.6.12
+protobuf == 3.20.*
+-e git+https://github.com/openai/CLIP.git@main#egg=clip
+-e git+https://github.com/TuBui/foolbox.git@main#egg=foolbox
